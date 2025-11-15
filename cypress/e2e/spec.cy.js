@@ -78,7 +78,7 @@ describe("Testes de fluxos da central de agendamento", () => {
       cy.get('[data-cy="btn-cadastro"]').should("not.exist");
       cy.get('[data-cy="btn-login-home"]').should("not.exist");
     });
-    it("Fluxo 3: Agendar consulta", () => {
+    it("Fluxo 3 e 4: Agendar consulta e enviar comprovante de pagametno", () => {
       // seleciona o tipo de consulta e aguarda o GET dos convenios
       cy.intercept(
         "GET",
@@ -144,7 +144,11 @@ describe("Testes de fluxos da central de agendamento", () => {
 
       cy.wait("@getConfirmacao");
 
-      // página de confirmação com validações
+      // página de confirmação com validações e intercept para página de confirmação de pagamento
+      cy.intercept(
+        "POST",
+        "https://clinic-mol.quark.tec.br/api/protected/me/agendamentos",
+      ).as("getPagamento");
       // confirma o paciente
       cy.get('[data-cy="confirmacao-paciente"]').should(
         "contain.text",
@@ -175,6 +179,35 @@ describe("Testes de fluxos da central de agendamento", () => {
         });
 
       cy.get('[data-cy="confirmacao-btn-confirmar"]').click();
+
+      cy.wait("@getPagamento");
+
+      // Processo de envio do comprovante de pagamento
+      cy.intercept(
+        "POST",
+        "https://clinic-mol.quark.tec.br/api/configs/sessao/passo",
+      ).as("getConfirmacaoPage");
+      cy.get('[data-cy="finalizacao-btn-transferencia"]').click();
+
+      // Anexa o comprovante de pagamento
+      cy.get("#comprovante").selectFile(
+        "cypress/fixtures/comprovante-teste.jpg",
+        {
+          force: true,
+        },
+      );
+      cy.get('[data-cy="pagamento-form-textarea-observacao"]').type(
+        "Comprovante de Teste",
+      );
+      cy.wait("@getConfirmacaoPage");
+
+      cy.get('[data-cy="pagamento-form-btn-enviar"]').click();
+
+      // Comprovante enviado
+      cy.get('[data-cy="pagamento-confirm-link"]').should(
+        "contain.text",
+        "Obrigado por enviar! Iremos analisar!",
+      );
     });
   });
 });
