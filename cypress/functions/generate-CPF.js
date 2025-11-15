@@ -1,3 +1,4 @@
+// Função para gerar CPF válido
 export default function generateCPF() {
   const rnd = (n) => Math.round(Math.random() * n);
   const mod = (base, div) => Math.round(base - Math.floor(base / div) * div);

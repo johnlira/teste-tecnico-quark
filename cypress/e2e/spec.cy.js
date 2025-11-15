@@ -1,213 +1,160 @@
 import generatePerson from "../functions/generate-person";
 
 const userTest = generatePerson();
+// O user é gerado com nome completo, como usamos o primeiro nome diversas vezes, foi criado essa const
+const firstName = userTest.name.split(" ")[0];
+// !!! devido á pacote externo para criação de dados, utilizamos o genero em ingles para ser personalizado. Com isso usaremos esse MAP para "traduzir" a seleção na página
 const map = {
   female: "FEMININO",
   male: "MASCULINO",
   undefined: "INDEFINIDO",
 };
-describe("Testes de fluxos da central de agendamento", () => {
-  // it("Fluxo 1: Cadastro de Novo Usuário", () => {
-  //   cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
-  //   cy.get('[data-cy="btn-cadastro"]').click();
 
-  //   cy.intercept(
-  //     "POST",
-  //     "https://clinic-mol.quark.tec.br/api/social/usuarios",
-  //   ).as("registerRequest");
+// Comando para evitar repetição no processo de login
+Cypress.Commands.add("login", () => {
+  cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
+  cy.get('[data-cy="btn-login"]').click();
 
-  //   cy.get('[data-cy="campo-nome-input"]').type(userTest.name);
-  //   cy.get('[data-cy="campo-telefone-input"]').type(userTest.phone);
-  //   cy.get('[data-cy="campo-sexo-select"]').select(map[userTest.sex]);
-  //   cy.get('[data-cy="campo-data-nascimento-input"]').type(userTest.birth);
-  //   cy.get('input[placeholder="Email"]').type(userTest.email);
-  //   cy.get('[data-cy="campo-numero-documento-input"]').type(userTest.CPF);
-  //   cy.get("#senha").type(userTest.passwd);
-  //   cy.get('[data-cy="campo-confirmar-senha-input"]').type(userTest.passwd);
-  //   cy.get('[name="cb-cadastro"]').check({ force: true });
-  //   cy.get('[data-cy="btn-criar-conta"]').click();
+  cy.intercept("POST", "**/api/auth/login").as("loginRequest");
 
-  //   cy.wait("@registerRequest").its("response.statusCode").should("eq", 200);
+  cy.get('[data-cy="campo-usuario-input"]').type(userTest.email);
+  cy.get('[name="password"]').type(userTest.passwd);
+  cy.get('[name="cb-login"]').check({ force: true });
+  cy.get('[data-cy="btn-submit-login"]').click();
 
-  //   // Validações para confirmar se o usuário está logado.
-  //   cy.contains(userTest.name.split(" ")[0]).should("be.visible");
-  //   cy.get('[data-cy="btn-cadastro"]').should("not.exist");
-  //   cy.get('[data-cy="btn-login-home"]').should("not.exist");
-  // });
+  cy.wait("@loginRequest").its("response.statusCode").should("eq", 200);
+  cy.contains(firstName).should("be.visible");
+});
 
-  // it("Fluxo 2: Login de Usuário", () => {
-  //   cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
-  //   cy.get('[data-cy="btn-login"]').click();
+describe("Testes central de agendamento", () => {
+  it("Fluxo 1: Cadastro de Novo Usuário", () => {
+    cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
+    cy.get('[data-cy="btn-cadastro"]').click();
 
-  //   cy.intercept("POST", "https://clinic-mol.quark.tec.br/api/auth/login").as(
-  //     "loginRequest",
-  //   );
+    cy.intercept("POST", "**/api/social/usuarios").as("registerRequest");
 
-  //   cy.get('[data-cy="campo-usuario-input"]').type(userTest.email);
-  //   cy.get('[name="password"]').type(userTest.passwd);
-  //   cy.get('[name="cb-login"]').check({ force: true });
-  //   cy.get('[data-cy="btn-submit-login"]').click();
+    cy.get('[data-cy="campo-nome-input"]').type(userTest.name);
+    cy.get('[data-cy="campo-telefone-input"]').type(userTest.phone);
+    cy.get('[data-cy="campo-sexo-select"]').select(map[userTest.sex]);
+    cy.get('[data-cy="campo-data-nascimento-input"]').type(userTest.birth);
+    cy.get('input[placeholder="Email"]').type(userTest.email);
+    cy.get('[data-cy="campo-numero-documento-input"]').type(userTest.CPF);
+    cy.get("#senha").type(userTest.passwd);
+    cy.get('[data-cy="campo-confirmar-senha-input"]').type(userTest.passwd);
+    cy.get('[name="cb-cadastro"]').check({ force: true });
+    cy.get('[data-cy="btn-criar-conta"]').click();
 
-  //   cy.wait("@loginRequest").its("response.statusCode").should("eq", 200);
+    cy.wait("@registerRequest").its("response.statusCode").should("eq", 200);
 
-  //   //Validações para confirmar se o usuário está logado.
-  //   cy.contains(userTest.name.split(" ")[0]).should("be.visible");
-  //   cy.get('[data-cy="btn-cadastro"]').should("not.exist");
-  //   cy.get('[data-cy="btn-login-home"]').should("not.exist");
-  // });
+    cy.contains(firstName).should("be.visible");
+  });
 
-  describe("fluxos com login", () => {
-    beforeEach(() => {
-      // Antes de fazer os próximos passos, será necessário logar na conta
-      cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
-      cy.get('[data-cy="btn-login"]').click();
+  it("Fluxo 2: Login de Usuário", () => {
+    cy.login();
+  });
 
-      cy.intercept("POST", "https://clinic-mol.quark.tec.br/api/auth/login").as(
-        "loginRequest",
-      );
+  describe("Fluxos com login", () => {
+    beforeEach(() => cy.login());
 
-      cy.get('[data-cy="campo-usuario-input"]').type("teste@123.com");
-      cy.get('[name="password"]').type("teste");
-      cy.get('[name="cb-login"]').check({ force: true });
-      cy.get('[data-cy="btn-submit-login"]').click();
+    it("Fluxo 3 e 4: Agendar consulta e enviar comprovante", () => {
+      // Lista de interceps que serão usados
+      cy.intercept("GET", "**/agendamentos/convenios*").as("getConvenios");
+      cy.intercept("GET", "**/agendamentos/agendas*").as("getAgendas");
+      cy.intercept("GET", "**/protected/me/dependentes").as("getPacientes");
+      cy.intercept("POST", "**/agendamentos/negociacao/*").as("getConfirmacao");
+      cy.intercept("POST", "**/protected/me/agendamentos").as("getPagamento");
+      cy.intercept("POST", "**/configs/sessao/passo").as("nextStep");
 
-      cy.wait("@loginRequest").its("response.statusCode").should("eq", 200);
-
-      //Validações para confirmar se o usuário está logado.
-      cy.contains("teste").should("be.visible");
-      cy.get('[data-cy="btn-cadastro"]').should("not.exist");
-      cy.get('[data-cy="btn-login-home"]').should("not.exist");
-    });
-    it("Fluxo 3 e 4: Agendar consulta e enviar comprovante de pagametno", () => {
-      // seleciona o tipo de consulta e aguarda o GET dos convenios
-      cy.intercept(
-        "GET",
-        "https://clinic-mol.quark.tec.br/api/agendamentos/convenios?telemedicina=false",
-      ).as("getConvenios");
+      // Página inicial
       cy.get('[data-cy="btn-consulta-presencial"]').click();
       cy.wait("@getConvenios");
-      // seleciona o convenio e aguarda o GET da agenda disponivel
-      cy.intercept(
-        "GET",
-        "https://clinic-mol.quark.tec.br/api/agendamentos/agendas?convenio_id=148&especialidade_id=60&clinica_id=363622231&telemedicina=false",
-      ).as("getAgendas");
+
+      // Convenios
       cy.get('[data-cy="convenio-label-148"]').click();
       cy.get('[data-cy="convenio-radio-148"]').check();
       cy.wait("@getAgendas");
-      // seleciona o primeiro horário disponivel, salva alias para verificações futuras e aguarda o GET dos dependentes
-      cy.intercept(
-        "GET",
-        "https://clinic-mol.quark.tec.br/api/protected/me/dependentes",
-      ).as("getPacientes");
 
+      // Agenda de horários
       const timeSelector = '[data-cy^="agenda-item-horario-texto-"]';
 
-      // busca pelo primeiro card que tenha o time selector (há casos que não terá horários para a data)
+      // Antes de prosseguir para a página selecionando o horário, verificamos se o card possui horário disponivel e pegamos o primeiro deles.
+      // Além disso, salvamos o horário, data e nome do profissional (que no site é o mesmo para todos mas pode ocorrer alterações)
+
       cy.get(`[data-cy="agendar-agendas-list"] .card`)
         .filter(`:has(${timeSelector})`)
-        .first() // vai pegar o primeiro elemento (horário)
-        .as("firstCard");
+        .first()
+        .as("card");
 
-      // Salva o nome do profissional para fazer uma validação posterior
-      cy.get("@firstCard")
+      cy.get("@card")
         .find('[data-cy="agenda-profissional-nome"]')
         .invoke("text")
         .then((t) => t.trim())
-        .as("selectedProfissional");
+        .as("prof");
 
-      cy.get("@firstCard")
+      cy.get("@card")
         .find('[data-cy="agenda-main-header"]')
         .invoke("text")
         .then((t) => t.trim())
-        .as("selectedDate");
+        .as("date");
 
-      cy.get("@firstCard")
-        .find('[data-cy^="agenda-item-horario-texto-"]')
+      cy.get("@card")
+        .find(timeSelector)
         .first()
         .invoke("text")
         .then((t) => t.trim())
-        .as("selectedTime");
+        .as("time");
 
-      cy.get("@firstCard").find(timeSelector).first().click();
-
+      cy.get("@card").find(timeSelector).first().click();
       cy.wait("@getPacientes");
 
-      // página de pacientes
-      cy.intercept(
-        "POST",
-        "https://clinic-mol.quark.tec.br/api/agendamentos/negociacao/368098276?convenio_id=148&especialidade_id=60&clinica_id=363622231",
-      ).as("getConfirmacao");
-
+      // Seletor de dependente
       cy.get('[data-cy="paciente-card-nome"]')
-        .should("contain.text", "teste")
+        .should("contain.text", firstName)
         .click();
 
       cy.wait("@getConfirmacao");
 
-      // página de confirmação com validações e intercept para página de confirmação de pagamento
-      cy.intercept(
-        "POST",
-        "https://clinic-mol.quark.tec.br/api/protected/me/agendamentos",
-      ).as("getPagamento");
-      // confirma o paciente
-      cy.get('[data-cy="confirmacao-paciente"]').should(
-        "contain.text",
-        "teste",
-      );
-      // confirma o profissional
-      cy.get("@selectedProfissional").then((prof) => {
-        cy.contains(prof).should("be.visible");
-      });
-      // confirma a especialidade
+      // Tela de confirmação para validação
+      cy.get("@prof").then((prof) => cy.contains(prof).should("be.visible"));
       cy.get('[data-cy="confirmacao-especialidade"]').should(
         "contain.text",
         "CARDIOLOGIA",
       );
-      // confirma a data/hora
-      cy.get('[data-cy="confirmacao-datahora"]')
-        .invoke("text")
-        .then((t) => {
-          const date = t.match(/\d{2}\/\d{2}/)[0];
-          const time = t.match(/\d{2}:\d{2}/)[0];
-          return `${date} - ${time}`;
-        })
-        .then((expected) => {
+
+      cy.get("@date").then((d) => {
+        cy.get("@time").then((h) => {
           cy.get('[data-cy="confirmacao-datahora"]').should(
             "contain.text",
-            expected,
+            `${d.match(/\d{2}\/\d{2}/)[0]} - ${h}`, // Regex para conferir a data e horário dd/mm - 00:00
           );
         });
+      });
 
       cy.get('[data-cy="confirmacao-btn-confirmar"]').click();
-
       cy.wait("@getPagamento");
+      // Tela de pagamento
 
-      // Processo de envio do comprovante de pagamento
-      cy.intercept(
-        "POST",
-        "https://clinic-mol.quark.tec.br/api/configs/sessao/passo",
-      ).as("getConfirmacaoPage");
       cy.get('[data-cy="finalizacao-btn-transferencia"]').click();
 
-      // Anexa o comprovante de pagamento
+      // Tela para enviar o comprovante
       cy.get("#comprovante").selectFile(
         "cypress/fixtures/comprovante-teste.jpg",
-        {
-          force: true,
-        },
+        { force: true },
       );
+
       cy.get('[data-cy="pagamento-form-textarea-observacao"]').type(
         "Comprovante de Teste",
       );
-      cy.wait("@getConfirmacaoPage");
 
+      cy.wait("@nextStep");
       cy.get('[data-cy="pagamento-form-btn-enviar"]').click();
 
-      // Comprovante enviado
+      // Tela para confirmar o envio do comprovante
       cy.get('[data-cy="pagamento-confirm-link"]').should(
         "contain.text",
         "Obrigado por enviar! Iremos analisar!",
       );
+      // Final do teste
     });
   });
 });
