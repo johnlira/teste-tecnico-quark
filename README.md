@@ -1,4 +1,3 @@
-
 # Desafio Técnico - Estágio QA - Automação (Quark - ESIG Group)
 
 Este repositório contém a minha solução para o desafio técnico de automação de testes  com Cypress do processo seletivo para Estágio QA.
@@ -17,17 +16,21 @@ O projeto automatiza testes para fluxos de: Cadastro, login, agendamento de cons
 ## Instalação
 
 1.  Clone este repositório:
-  ```bash
-    git clone https://github.com/johnliradev/teste-tecnico-quark
-    ```
+
+```bash
+ git clone https://github.com/johnliradev/teste-tecnico-quark
+```
+
 2.  Navegue até o diretório do projeto:
-  ```bash
+```bash
     cd teste-tecnico-quark
-    ```
+```
+
 3.  Instale as dependências necessárias (Cypress e Faker):
-  ```bash
+```bash
     npm install
-    ```
+```
+
 
 ---
 
