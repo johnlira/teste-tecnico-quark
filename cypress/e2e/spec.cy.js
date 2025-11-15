@@ -6,8 +6,8 @@ const map = {
   male: "MASCULINO",
   undefined: "INDEFINIDO",
 };
-describe("Registrar nova conta", () => {
-  it("passes", () => {
+describe("Testes de fluxos da central de agendamento", () => {
+  it("Fluxo 1: Cadastro de Novo Usuário", () => {
     cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
     cy.get('[data-cy="btn-cadastro"]').click();
 
@@ -30,6 +30,27 @@ describe("Registrar nova conta", () => {
     cy.wait("@registerRequest").its("response.statusCode").should("eq", 200);
 
     // Validações para confirmar se o usuário está logado.
+    cy.contains(userTest.name.split(" ")[0]).should("be.visible");
+    cy.get('[data-cy="btn-cadastro"]').should("not.exist");
+    cy.get('[data-cy="btn-login-home"]').should("not.exist");
+  });
+
+  it("Fluxo 2: Login de Usuário", () => {
+    cy.visit("https://agendamento.quarkclinic.com.br/index/363622206");
+    cy.get('[data-cy="btn-login"]').click();
+
+    cy.intercept("POST", "https://clinic-mol.quark.tec.br/api/auth/login").as(
+      "loginRequest",
+    );
+
+    cy.get('[data-cy="campo-usuario-input"]').type(userTest.email);
+    cy.get('[name="password"]').type(userTest.passwd);
+    cy.get('[name="cb-login"]').check({ force: true });
+    cy.get('[data-cy="btn-submit-login"]').click();
+
+    cy.wait("@loginRequest").its("response.statusCode").should("eq", 200);
+
+    //Validações para confirmar se o usuário está logado.
     cy.contains(userTest.name.split(" ")[0]).should("be.visible");
     cy.get('[data-cy="btn-cadastro"]').should("not.exist");
     cy.get('[data-cy="btn-login-home"]').should("not.exist");
