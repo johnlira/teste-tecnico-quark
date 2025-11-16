@@ -121,6 +121,10 @@ describe("Testes central de agendamento", () => {
         "contain.text",
         "CARDIOLOGIA",
       );
+      cy.get('[data-cy="confirmacao-paciente"]').should(
+        "contain.text",
+        userTest.name,
+      );
 
       cy.get("@date").then((d) => {
         cy.get("@time").then((h) => {
