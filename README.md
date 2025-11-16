@@ -59,5 +59,5 @@ Este comando executa o teste automaticamente pelo seu terminal, ao final do test
 
 No terminal: 
 ```bash
-npx cypress open
+npx cypress run
 ```
