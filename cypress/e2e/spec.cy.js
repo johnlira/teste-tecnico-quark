@@ -38,6 +38,7 @@ describe("Testes central de agendamento", () => {
     cy.get('[data-cy="campo-sexo-select"]').select(map[userTest.sex]);
     cy.get('[data-cy="campo-data-nascimento-input"]').type(userTest.birth);
     cy.get('input[placeholder="Email"]').type(userTest.email);
+    cy.get('[data-cy="campo-tipo-documento-select"]').select("CPF");
     cy.get('[data-cy="campo-numero-documento-input"]').type(userTest.CPF);
     cy.get("#senha").type(userTest.passwd);
     cy.get('[data-cy="campo-confirmar-senha-input"]').type(userTest.passwd);
